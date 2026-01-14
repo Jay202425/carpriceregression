@@ -3,6 +3,11 @@ import pandas as pd
 import numpy as np
 import pickle
 import warnings
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LinearRegression
+
 warnings.filterwarnings('ignore')
 
 # Set page configuration
@@ -16,15 +21,58 @@ st.set_page_config(
 st.title("🚗 Car Price Prediction Model")
 st.markdown("Predict car selling prices using Mileage and Age with MinMax Scaled Linear Regression")
 
-# Load the trained model and scaler
-try:
-    with open('car_price_model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    with open('scaler.pkl', 'rb') as f:
-        scaler = pickle.load(f)
-except FileNotFoundError:
-    st.error("⚠️ Model files not found! Please run 'python regression_model.py' first.")
-    st.stop()
+# Function to train and save the model
+@st.cache_resource
+def load_or_train_model():
+    model_path = 'car_price_model.pkl'
+    scaler_path = 'scaler.pkl'
+    
+    # Check if pickle files exist
+    if os.path.exists(model_path) and os.path.exists(scaler_path):
+        try:
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+            with open(scaler_path, 'rb') as f:
+                scaler = pickle.load(f)
+            return model, scaler
+        except Exception as e:
+            st.warning(f"Could not load saved model: {e}. Retraining...")
+    
+    # If files don't exist or can't be loaded, train a new model
+    try:
+        df = pd.read_csv('carprices (1) (1).csv')
+        
+        # Prepare data
+        X = df[['Mileage', 'Age(yrs)']].values
+        y = df['Sell Price($)'].values
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Scale data
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        X_train_scaled = scaler.fit_transform(X_train)
+        
+        # Train model
+        model = LinearRegression()
+        model.fit(X_train_scaled, y_train)
+        
+        # Save model and scaler
+        try:
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
+            with open(scaler_path, 'wb') as f:
+                pickle.dump(scaler, f)
+        except Exception as e:
+            st.warning(f"Could not save model files: {e}")
+        
+        return model, scaler
+    except Exception as e:
+        st.error(f"Error training model: {e}")
+        st.stop()
+
+# Load or train the model
+model, scaler = load_or_train_model()
 
 # Sidebar for input
 st.sidebar.header("📊 Input Parameters")
