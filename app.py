@@ -4,8 +4,6 @@ import numpy as np
 import pickle
 import warnings
 import os
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.linear_model import LinearRegression
 
 warnings.filterwarnings('ignore')
 
@@ -23,6 +21,13 @@ st.markdown("Predict car selling prices using Mileage and Age with MinMax Scaled
 # Function to train and save the model
 @st.cache_resource
 def load_or_train_model():
+    try:
+        from sklearn.preprocessing import MinMaxScaler
+        from sklearn.linear_model import LinearRegression
+    except ImportError as e:
+        st.error(f"Error importing sklearn: {e}")
+        st.stop()
+    
     model_path = 'car_price_model.pkl'
     scaler_path = 'scaler.pkl'
     
