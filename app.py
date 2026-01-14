@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 import warnings
 import os
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LinearRegression
 
@@ -46,16 +45,13 @@ def load_or_train_model():
         X = df[['Mileage', 'Age(yrs)']].values
         y = df['Sell Price($)'].values
         
-        # Split data
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        # Scale data
+        # Scale data (use all data for training on Streamlit Cloud)
         scaler = MinMaxScaler(feature_range=(0, 1))
-        X_train_scaled = scaler.fit_transform(X_train)
+        X_scaled = scaler.fit_transform(X)
         
-        # Train model
+        # Train model on all data
         model = LinearRegression()
-        model.fit(X_train_scaled, y_train)
+        model.fit(X_scaled, y)
         
         # Save model and scaler
         try:
